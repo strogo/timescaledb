@@ -384,18 +384,20 @@ SELECT * FROM _timescaledb_catalog.hypertable;
 (1 row)
 
 \dt  "_timescaledb_catalog".*
-                     List of relations
-        Schema        |       Name       | Type  |  Owner   
-----------------------+------------------+-------+----------
- _timescaledb_catalog | chunk            | table | postgres
- _timescaledb_catalog | chunk_constraint | table | postgres
- _timescaledb_catalog | chunk_index      | table | postgres
- _timescaledb_catalog | dimension        | table | postgres
- _timescaledb_catalog | dimension_slice  | table | postgres
- _timescaledb_catalog | hypertable       | table | postgres
- _timescaledb_catalog | hypertable_index | table | postgres
- _timescaledb_catalog | tablespace       | table | postgres
-(8 rows)
+                      List of relations
+        Schema        |        Name        | Type  |  Owner   
+----------------------+--------------------+-------+----------
+ _timescaledb_catalog | chunk              | table | postgres
+ _timescaledb_catalog | chunk_constraint   | table | postgres
+ _timescaledb_catalog | chunk_index        | table | postgres
+ _timescaledb_catalog | chunk_trigger      | table | postgres
+ _timescaledb_catalog | dimension          | table | postgres
+ _timescaledb_catalog | dimension_slice    | table | postgres
+ _timescaledb_catalog | hypertable         | table | postgres
+ _timescaledb_catalog | hypertable_index   | table | postgres
+ _timescaledb_catalog | hypertable_trigger | table | postgres
+ _timescaledb_catalog | tablespace         | table | postgres
+(10 rows)
 
 \dt+ "_timescaledb_internal".*
                  List of relations

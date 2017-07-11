@@ -173,6 +173,36 @@ INSERT INTO _timescaledb_catalog.hypertable_index (hypertable_id, main_schema_na
 VALUES (hypertable_id, main_schema_name, main_index_name, definition);
 $BODY$;
 
+-- Add an index to a hypertable
+CREATE OR REPLACE FUNCTION _timescaledb_internal.add_trigger(
+    hypertable_id INTEGER,
+    trigger_oid OID
+)
+    RETURNS VOID LANGUAGE PLPGSQL VOLATILE AS
+$BODY$
+DECLARE
+    trigger_row record;
+BEGIN
+    SELECT * INTO STRICT trigger_row FROM pg_trigger WHERE OID = trigger_oid;
+    IF (trigger_row.tgtype & (1 << 2) != 0) THEN
+        --is INSERT trigger
+        IF (trigger_row.tgtype & (1 << 3) != 0) OR  (trigger_row.tgtype & (1 << 4) != 0) THEN
+            RAISE 'Combining INSERT triggers with UPDATE or DELETE triggers is not supported.'
+            USING HINT = 'Please define separate triggers for each operation';
+        END IF;
+        IF (trigger_row.tgtype & ((1 << 1) | (1 << 6)) = 0) THEN
+            RAISE 'AFTER trigger on INSERT is not supported: %.', trigger_row.tgname;
+        END IF;
+    ELSE
+        IF (trigger_row.tgtype & (1 << 0) != 0) THEN
+            --row trigger
+            INSERT INTO _timescaledb_catalog.hypertable_trigger (hypertable_id, trigger_name, definition)
+            VALUES (hypertable_id, trigger_row.tgname, _timescaledb_internal.get_general_trigger_definition(trigger_oid));
+        END IF;
+    END IF;
+END
+$BODY$;
+
 -- Drops the index for a hypertable
 CREATE OR REPLACE FUNCTION _timescaledb_internal.drop_index(
     main_schema_name NAME,
@@ -308,6 +338,43 @@ BEGIN
     RETURN def;
 END
 $BODY$;
+
+
+
+-- Create the "general definition" of a trigger. The general definition
+-- is the corresponding create trigger command with the placeholders /*TABLE_NAME*/
+CREATE OR REPLACE FUNCTION _timescaledb_internal.get_general_trigger_definition(
+    trigger_oid       REGCLASS
+)
+RETURNS text
+LANGUAGE plpgsql VOLATILE AS
+$BODY$
+DECLARE
+    def             TEXT;
+    c               INTEGER;
+    trigger_row     RECORD;
+BEGIN
+    -- Get trigger definition
+    def := pg_get_triggerdef(trigger_oid);
+
+    IF def IS NULL THEN
+        RAISE EXCEPTION 'Cannot process trigger with no definition: %', trigger_oid::TEXT;
+    END IF;
+
+    SELECT * INTO STRICT trigger_row FROM pg_trigger WHERE oid = trigger_oid;
+
+    SELECT count(*) INTO c
+    FROM regexp_matches(def, 'ON '|| trigger_row.tgrelid::regclass::TEXT, 'g');
+    IF c <> 1 THEN
+         RAISE EXCEPTION 'Cannot process trigger with definition(no table name match: %): %', trigger_row.tgrelid::regclass::TEXT, def
+         USING ERRCODE = 'IO103';
+    END IF;
+
+    def := replace(def,  'ON '|| trigger_row.tgrelid::regclass::TEXT, 'ON /*TABLE_NAME*/');
+    RETURN def;
+END
+$BODY$;
+
 
 -- Creates the default indexes on a hypertable.
 CREATE OR REPLACE FUNCTION _timescaledb_internal.create_default_indexes(

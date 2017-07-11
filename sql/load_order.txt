@@ -6,6 +6,8 @@ sql/ddl_internal.sql
 sql/util_time.sql
 sql/util_internal_table_ddl.sql
 sql/chunk.sql
+sql/chunk_trigger.sql
+sql/hypertable_trigger_triggers.sql
 sql/hypertable_triggers.sql
 sql/hypertable_index_triggers.sql
 sql/partitioning.sql

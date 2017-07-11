@@ -120,6 +120,15 @@ BEGIN
     )
     WHERE indrelid = main_table;
 
+    PERFORM 1
+    FROM pg_trigger,
+    LATERAL _timescaledb_internal.add_trigger(
+        hypertable_row.id,
+        oid
+    )
+    WHERE tgrelid = main_table AND
+    tgname != '_timescaledb_main_insert_trigger' AND tgname != '_timescaledb_main_after_insert_trigger';
+
     IF create_default_indexes THEN
         PERFORM _timescaledb_internal.create_default_indexes(hypertable_row, main_table, partitioning_column);
     END IF;

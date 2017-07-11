@@ -16,6 +16,10 @@ BEGIN
         FROM _timescaledb_catalog.hypertable_index hi
         WHERE hi.hypertable_id = NEW.hypertable_id;
 
+        PERFORM _timescaledb_internal.create_chunk_trigger_row(NEW.id, ht.id, ht.trigger_name, ht.definition)
+        FROM _timescaledb_catalog.hypertable_trigger ht
+        WHERE ht.hypertable_id = NEW.hypertable_id;
+
         RETURN NEW;
     ELSIF TG_OP = 'DELETE' THEN
         -- when deleting the chunk row from the metadata table,

@@ -136,6 +136,17 @@ CREATE TABLE IF NOT EXISTS _timescaledb_catalog.hypertable_index (
 );
 SELECT pg_catalog.pg_extension_config_dump('_timescaledb_catalog.hypertable_index', '');
 
+-- Represents a trigger on the hypertable
+CREATE TABLE IF NOT EXISTS _timescaledb_catalog.hypertable_trigger (
+    id               SERIAL              NOT NULL PRIMARY KEY,
+    hypertable_id    INTEGER             NOT NULL REFERENCES _timescaledb_catalog.hypertable(id) ON DELETE CASCADE,
+    trigger_name     NAME                NOT NULL,
+    definition       TEXT                NOT NULL, -- def with /*TABLE_NAME*/ placeholders
+    UNIQUE(hypertable_id, trigger_name)
+);
+SELECT pg_catalog.pg_extension_config_dump('_timescaledb_catalog.hypertable_trigger', '');
+SELECT pg_catalog.pg_extension_config_dump(pg_get_serial_sequence('_timescaledb_catalog.hypertable_trigger','id'), '');
+
 -- Represents an index on a chunk
 CREATE TABLE IF NOT EXISTS _timescaledb_catalog.chunk_index (
     id                SERIAL  PRIMARY KEY,
@@ -151,3 +162,14 @@ CREATE TABLE IF NOT EXISTS _timescaledb_catalog.chunk_index (
 );
 SELECT pg_catalog.pg_extension_config_dump('_timescaledb_catalog.chunk_index', '');
 SELECT pg_catalog.pg_extension_config_dump(pg_get_serial_sequence('_timescaledb_catalog.chunk_index','id'), '');
+
+-- Represents an trigger on a chunk
+CREATE TABLE IF NOT EXISTS _timescaledb_catalog.chunk_trigger (
+    id                      SERIAL  PRIMARY KEY,
+    chunk_id                INTEGER NOT NULL REFERENCES _timescaledb_catalog.chunk(id) ON DELETE CASCADE,
+    hypertable_trigger_id   INTEGER NOT NULL REFERENCES _timescaledb_catalog.hypertable_trigger(id) ON DELETE CASCADE,
+    trigger_name            NAME    NOT NULL,
+    definition              TEXT    NOT NULL
+);
+SELECT pg_catalog.pg_extension_config_dump('_timescaledb_catalog.chunk_trigger', '');
+SELECT pg_catalog.pg_extension_config_dump(pg_get_serial_sequence('_timescaledb_catalog.chunk_trigger','id'), '');

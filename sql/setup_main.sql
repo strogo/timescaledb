@@ -32,6 +32,17 @@ BEGIN
     AFTER INSERT OR UPDATE OR DELETE ON _timescaledb_catalog.hypertable_index
     FOR EACH ROW EXECUTE PROCEDURE _timescaledb_internal.on_change_hypertable_index();
 
+    DROP TRIGGER IF EXISTS trigger_main_on_change_hypertable_trigger
+    ON _timescaledb_catalog.hypertable_trigger;
+    CREATE TRIGGER trigger_main_on_change_hypertable_trigger
+    AFTER INSERT OR UPDATE OR DELETE ON _timescaledb_catalog.hypertable_trigger
+    FOR EACH ROW EXECUTE PROCEDURE _timescaledb_internal.on_change_hypertable_trigger();
+
+    DROP TRIGGER IF EXISTS trigger_main_on_change_chunk_trigger
+    ON _timescaledb_catalog.chunk_trigger;
+    CREATE TRIGGER trigger_main_on_change_chunk_trigger
+    AFTER INSERT OR UPDATE OR DELETE ON _timescaledb_catalog.chunk_trigger
+    FOR EACH ROW EXECUTE PROCEDURE _timescaledb_internal.on_change_chunk_trigger();
 
     -- No support for TRUNCATE currently, so have a trigger to prevent it on
     -- all meta tables.
@@ -62,6 +73,10 @@ BEGIN
        WHEN tag IN ('create trigger')
        EXECUTE PROCEDURE _timescaledb_internal.ddl_process_create_trigger();
 
+    CREATE EVENT TRIGGER ddl_drop_trigger
+       ON sql_drop
+       EXECUTE PROCEDURE _timescaledb_internal.ddl_process_drop_trigger();
+
     CREATE EVENT TRIGGER ddl_alter_table ON ddl_command_end
        WHEN tag IN ('alter table')
        EXECUTE PROCEDURE _timescaledb_internal.ddl_process_alter_table();
@@ -75,6 +90,7 @@ BEGIN
         ALTER EXTENSION timescaledb ADD EVENT TRIGGER ddl_alter_index;
         ALTER EXTENSION timescaledb ADD EVENT TRIGGER ddl_drop_index;
         ALTER EXTENSION timescaledb ADD EVENT TRIGGER ddl_create_trigger;
+        ALTER EXTENSION timescaledb ADD EVENT TRIGGER ddl_drop_trigger;
         ALTER EXTENSION timescaledb ADD EVENT TRIGGER ddl_alter_table;
         ALTER EXTENSION timescaledb ADD EVENT TRIGGER ddl_check_drop_command;
     END IF;
